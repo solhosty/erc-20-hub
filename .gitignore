@@ -1,0 +1,39 @@
+# Node
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+
+# Frontend build artifacts
+frontend/.next/
+frontend/out/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Foundry
+contracts/lib/
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+
+# Logs
+*.log
+
+# Auto-added by Cygent
+.next/
+out/
+dist/
+build/
+.turbo/
+.vercel/
+!.env.template
+coverage/
+.nyc_output/
+*.tsbuildinfo
+.cache/
+cache/
+artifacts/
+typechain-types/
+broadcast/
