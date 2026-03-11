@@ -27,6 +27,13 @@ export function TokenActions({ onNewTransaction }: TokenActionsProps) {
   const { switchChain } = useSwitchChain();
   const [busyAction, setBusyAction] = useState<"mint" | "transfer" | "burn" | null>(null);
   const token = useTokenForge();
+  const mintDisabled = !isConnected || busyAction !== null || !token.canMint;
+  const ownerStatus =
+    !isConnected
+      ? "Connect the owner wallet to mint"
+      : token.canMint
+        ? "Connected wallet is authorized to mint"
+        : "Connected wallet is not token owner";
 
   const mintForm = useForm<ActionSchema>({
     resolver: zodResolver(actionSchema),
@@ -62,6 +69,10 @@ export function TokenActions({ onNewTransaction }: TokenActionsProps) {
   const submitMint = mintForm.handleSubmit(async (data) => {
     if (!data.to || !isAddress(data.to)) {
       mintForm.setError("to", { message: "Valid recipient is required" });
+      return;
+    }
+    if (!token.canMint) {
+      toast.error("Mint is owner-only. Connect with the deployed token owner wallet.");
       return;
     }
     if (!ensureSepolia()) {
@@ -127,11 +138,12 @@ export function TokenActions({ onNewTransaction }: TokenActionsProps) {
         <div>
           <h2 className="text-xl font-semibold text-ink">Token controls</h2>
           <p className="text-sm text-drift">Network: {token.onSepolia ? "Sepolia" : "Wrong network"}</p>
+          <p className="text-sm text-drift">{ownerStatus}</p>
         </div>
         <ConnectButton showBalance={false} />
       </div>
 
-      <div className="mt-5 grid gap-3 rounded-xl border border-ink/10 bg-dawn p-4 text-sm text-ink sm:grid-cols-3">
+      <div className="mt-5 grid gap-3 rounded-xl border border-ink/10 bg-dawn p-4 text-sm text-ink sm:grid-cols-4">
         <p>
           <span className="font-semibold">Your balance:</span> {token.balance}
         </p>
@@ -140,6 +152,9 @@ export function TokenActions({ onNewTransaction }: TokenActionsProps) {
         </p>
         <p>
           <span className="font-semibold">Cap:</span> {token.cap}
+        </p>
+        <p>
+          <span className="font-semibold">Owner:</span> {token.owner}
         </p>
       </div>
 
@@ -152,6 +167,7 @@ export function TokenActions({ onNewTransaction }: TokenActionsProps) {
       <div className="mt-6 grid gap-5 md:grid-cols-3">
         <form onSubmit={submitMint} className="space-y-3 rounded-xl border border-ink/10 p-4">
           <h3 className="font-semibold text-ink">Mint</h3>
+          <p className="text-xs text-drift">Only the token owner can mint.</p>
           <input
             className="w-full rounded-md border border-ink/20 px-3 py-2 text-sm"
             placeholder="Recipient"
@@ -164,7 +180,7 @@ export function TokenActions({ onNewTransaction }: TokenActionsProps) {
           />
           <button
             type="submit"
-            disabled={!isConnected || busyAction !== null}
+            disabled={mintDisabled}
             className="w-full rounded-md bg-ink px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {busyAction === "mint" ? "Minting..." : "Mint"}

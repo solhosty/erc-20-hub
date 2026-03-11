@@ -62,6 +62,9 @@ forge script script/Deploy.s.sol:DeployTokenForge \
 
 Copy deployed address into `frontend/.env.local` as `NEXT_PUBLIC_TOKENFORGE_ADDRESS`.
 
+Minting is restricted by `onlyOwner`. In the dashboard, the connected wallet must match
+the deployed token owner (`owner()`) to submit mint transactions.
+
 ## Frontend workflow
 
 Run the app:
@@ -88,7 +91,8 @@ Before deployment or transactions, fund your wallet with Sepolia ETH from a fauc
 2. Deploy `TokenForgeERC20` from `contracts/script/Deploy.s.sol`
 3. Update `NEXT_PUBLIC_TOKENFORGE_ADDRESS`
 4. Start frontend and connect wallet
-5. Confirm active network shows Sepolia before signing
+5. For minting, connect the deployed owner wallet
+6. Confirm active network shows Sepolia before signing
 
 ## Contributing
 
