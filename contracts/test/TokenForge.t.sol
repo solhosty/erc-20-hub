@@ -25,6 +25,21 @@ contract TokenForgeTest is Test {
         assertEq(token.owner(), address(this));
     }
 
+    function testCannotDeployWithZeroCap() external {
+        vm.expectRevert(abi.encodeWithSelector(ERC20Capped.ERC20InvalidCap.selector, 0));
+        new TokenForgeERC20("TokenForge", "TFG", 0, address(this));
+    }
+
+    function testCannotDeployWithTinyCap() external {
+        vm.expectRevert(abi.encodeWithSelector(TokenForgeERC20.TokenForgeInvalidCap.selector, 1));
+        new TokenForgeERC20("TokenForge", "TFG", 1, address(this));
+    }
+
+    function testCannotDeployWithZeroOwner() external {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
+        new TokenForgeERC20("TokenForge", "TFG", CAP, address(0));
+    }
+
     function testOwnerCanMint() external {
         token.mint(alice, 100 ether);
 

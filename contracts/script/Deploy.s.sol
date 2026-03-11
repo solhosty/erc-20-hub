@@ -15,6 +15,10 @@ contract DeployTokenForge is Script {
         address defaultOwner = vm.addr(privateKey);
         address initialOwner = vm.envOr("INITIAL_OWNER", defaultOwner);
 
+        require(cap > 0, "TOKEN_CAP must be > 0");
+        require(initialMint <= cap, "INITIAL_MINT exceeds TOKEN_CAP");
+        require(initialOwner != address(0), "INITIAL_OWNER must not be zero");
+
         vm.startBroadcast(privateKey);
         deployedToken = new TokenForgeERC20(name, symbol, cap, initialOwner);
 

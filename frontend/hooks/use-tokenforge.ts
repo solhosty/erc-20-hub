@@ -17,10 +17,8 @@ import {
   useWriteContract
 } from "wagmi";
 
-import { tokenForgeAbi, tokenForgeAddress, tokenForgeConfigured } from "@/lib/contracts/tokenforge";
+import { ZERO_ADDRESS, tokenForgeAbi } from "@/lib/contracts/tokenforge";
 import { defaultChain } from "@/lib/wagmi";
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
 
 type TokenWriteFunction = "mint" | "transfer" | "burn";
 type TokenWriteArgs = readonly [Address, bigint] | readonly [bigint];
@@ -37,10 +35,13 @@ function normalizeWriteError(error: unknown, action: TokenWriteFunction): string
       const reason = revertError.reason ?? revertError.data?.errorName;
 
       if (reason === "OwnableUnauthorizedAccount") {
-        return "Mint is owner-only. Connect with the deployed token owner wallet.";
+        return "Only the token owner can mint.";
       }
       if (reason === "ERC20InsufficientBalance") {
         return "Insufficient token balance for this transaction.";
+      }
+      if (reason === "ERC20ExceededCap") {
+        return "Mint would exceed token cap.";
       }
       if (reason === "EnforcedPause") {
         return "Token is paused. Ask the owner to unpause before trying again.";
@@ -52,16 +53,6 @@ function normalizeWriteError(error: unknown, action: TokenWriteFunction): string
 
     const shortMessage = error.shortMessage?.trim();
     if (shortMessage) {
-      const lower = shortMessage.toLowerCase();
-      if (lower.includes("ownable") && lower.includes("unauthorized")) {
-        return "Mint is owner-only. Connect with the deployed token owner wallet.";
-      }
-      if (lower.includes("insufficient") && lower.includes("balance")) {
-        return "Insufficient token balance for this transaction.";
-      }
-      if (lower.includes("gas") && lower.includes("estimate")) {
-        return `${actionLabel} failed preflight simulation. Verify permissions and token state.`;
-      }
       return shortMessage;
     }
   }
@@ -70,54 +61,74 @@ function normalizeWriteError(error: unknown, action: TokenWriteFunction): string
     return error.message;
   }
 
-  return `${actionLabel} failed preflight simulation. Verify permissions and token state.`;
+  return `${actionLabel} failed preflight simulation.`;
 }
 
-export function useTokenForge() {
+export function useTokenForge(tokenAddress?: Address) {
   const { address } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient({ chainId: defaultChain.id });
   const { data: txHash, isPending, writeContractAsync } = useWriteContract();
   const txReceipt = useWaitForTransactionReceipt({ hash: txHash });
+
+  const configuredAddress = tokenAddress ?? ZERO_ADDRESS;
+  const tokenConfigured = configuredAddress !== ZERO_ADDRESS;
+
   const tokenWriteConfig = {
-    address: tokenForgeAddress,
+    address: configuredAddress,
     abi: tokenForgeAbi
   } as const;
 
+  const { data: nameRaw } = useReadContract({
+    ...tokenWriteConfig,
+    functionName: "name",
+    query: { enabled: tokenConfigured }
+  });
+
+  const { data: symbolRaw } = useReadContract({
+    ...tokenWriteConfig,
+    functionName: "symbol",
+    query: { enabled: tokenConfigured }
+  });
+
   const { data: balanceRaw } = useReadContract({
-    address: tokenForgeAddress,
-    abi: tokenForgeAbi,
+    ...tokenWriteConfig,
     functionName: "balanceOf",
     args: [address ?? ZERO_ADDRESS],
     query: {
-      enabled: Boolean(address) && tokenForgeConfigured
+      enabled: Boolean(address) && tokenConfigured
     }
   });
 
   const { data: ownerRaw } = useReadContract({
-    address: tokenForgeAddress,
-    abi: tokenForgeAbi,
+    ...tokenWriteConfig,
     functionName: "owner",
     query: {
-      enabled: tokenForgeConfigured
+      enabled: tokenConfigured
     }
   });
 
   const { data: totalSupplyRaw } = useReadContract({
-    address: tokenForgeAddress,
-    abi: tokenForgeAbi,
+    ...tokenWriteConfig,
     functionName: "totalSupply",
     query: {
-      enabled: tokenForgeConfigured
+      enabled: tokenConfigured
     }
   });
 
   const { data: capRaw } = useReadContract({
-    address: tokenForgeAddress,
-    abi: tokenForgeAbi,
+    ...tokenWriteConfig,
     functionName: "cap",
     query: {
-      enabled: tokenForgeConfigured
+      enabled: tokenConfigured
+    }
+  });
+
+  const { data: pausedRaw } = useReadContract({
+    ...tokenWriteConfig,
+    functionName: "paused",
+    query: {
+      enabled: tokenConfigured
     }
   });
 
@@ -130,7 +141,7 @@ export function useTokenForge() {
     functionName: TokenWriteFunction,
     args: TokenWriteArgs
   ): Promise<Hash> => {
-    if (!tokenForgeConfigured) {
+    if (!tokenConfigured) {
       throw new Error("Token address not configured.");
     }
     if (!address) {
@@ -140,7 +151,7 @@ export function useTokenForge() {
       throw new Error("Unable to initialize blockchain client for preflight checks.");
     }
     if (functionName === "mint" && !canMint) {
-      throw new Error("Mint is owner-only. Connect with the deployed token owner wallet.");
+      throw new Error("Mint is owner-only. Connect with the token owner wallet.");
     }
 
     try {
@@ -188,11 +199,14 @@ export function useTokenForge() {
     chainId,
     expectedChainId: defaultChain.id,
     onSepolia: chainId === defaultChain.id,
-    tokenAddress: tokenForgeAddress,
-    tokenConfigured: tokenForgeConfigured,
+    tokenAddress: configuredAddress,
+    tokenConfigured,
+    name: nameRaw ?? "Token",
+    symbol: symbolRaw ?? "TKN",
     owner,
     isOwner,
     canMint,
+    paused: pausedRaw ?? false,
     balance: formatUnits(balanceRaw ?? 0n, 18),
     totalSupply: formatUnits(totalSupplyRaw ?? 0n, 18),
     cap: formatUnits(capRaw ?? 0n, 18),
