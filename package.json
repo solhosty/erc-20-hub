@@ -1,0 +1,16 @@
+{
+  "name": "tokenforge-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "description": "TokenForge monorepo with Foundry contracts and Next.js frontend",
+  "packageManager": "pnpm@10.6.1",
+  "scripts": {
+    "dev": "pnpm --filter frontend dev",
+    "build": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint",
+    "typecheck": "pnpm --filter frontend typecheck"
+  },
+  "devDependencies": {
+    "typescript": "5.8.2"
+  }
+}
