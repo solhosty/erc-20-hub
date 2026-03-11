@@ -11,6 +11,10 @@ export function useTokenForge() {
   const chainId = useChainId();
   const { data: txHash, isPending, writeContractAsync } = useWriteContract();
   const txReceipt = useWaitForTransactionReceipt({ hash: txHash });
+  const tokenWriteConfig = {
+    address: tokenForgeAddress,
+    abi: tokenForgeAbi
+  } as const;
 
   const { data: balanceRaw } = useReadContract({
     address: tokenForgeAddress,
@@ -42,8 +46,7 @@ export function useTokenForge() {
 
   const mint = async (to: Address, amount: string): Promise<Hash> => {
     return writeContractAsync({
-      address: tokenForgeAddress,
-      abi: tokenForgeAbi,
+      ...tokenWriteConfig,
       functionName: "mint",
       args: [to, parseUnits(amount, 18)]
     });
@@ -51,8 +54,7 @@ export function useTokenForge() {
 
   const transfer = async (to: Address, amount: string): Promise<Hash> => {
     return writeContractAsync({
-      address: tokenForgeAddress,
-      abi: tokenForgeAbi,
+      ...tokenWriteConfig,
       functionName: "transfer",
       args: [to, parseUnits(amount, 18)]
     });
@@ -60,8 +62,7 @@ export function useTokenForge() {
 
   const burn = async (amount: string): Promise<Hash> => {
     return writeContractAsync({
-      address: tokenForgeAddress,
-      abi: tokenForgeAbi,
+      ...tokenWriteConfig,
       functionName: "burn",
       args: [parseUnits(amount, 18)]
     });

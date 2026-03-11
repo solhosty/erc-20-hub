@@ -8,6 +8,7 @@ const walletConnectProjectId =
 
 const sepoliaRpcUrl =
   process.env["NEXT_PUBLIC_SEPOLIA_RPC_URL"] ?? "https://ethereum-sepolia-rpc.publicnode.com";
+const sepoliaTransport = http(sepoliaRpcUrl);
 
 export const defaultChain = sepolia;
 
@@ -16,7 +17,7 @@ export const wagmiConfig = getDefaultConfig({
   projectId: walletConnectProjectId,
   chains: [sepolia],
   transports: {
-    [sepolia.id]: http(sepoliaRpcUrl)
+    [sepolia.id]: sepoliaTransport
   },
   ssr: true
 });
