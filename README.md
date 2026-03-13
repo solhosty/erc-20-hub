@@ -77,8 +77,9 @@ Copy the factory address into `frontend/.env.local` as `NEXT_PUBLIC_TOKENFORGE_F
 `TOKEN_CAP` and `INITIAL_MINT` are raw 18-decimal units in contracts scripts. Keep
 `TOKEN_CAP >= 1 ether` (at least one full token) and `INITIAL_MINT <= TOKEN_CAP`.
 
-Minting remains restricted by `onlyOwner`. In the dashboard, each token card checks
-`owner()` before allowing mint submissions.
+Factory token creation is restricted to the `TokenForgeFactory` owner account.
+Minting remains restricted by each token's `onlyOwner`. In the dashboard, each
+token card checks `owner()` before allowing mint submissions.
 
 ## Frontend workflow
 
@@ -95,7 +96,7 @@ Open:
 
 Dashboard workflow:
 
-1. Create a token in the `Create Token` section
+1. Create a token in the `Create Token` section with the factory-owner wallet
 2. Wait for transaction submit/confirmation
 3. Manage minted token from `My Tokens` card actions (mint/transfer/burn)
 
@@ -112,7 +113,7 @@ Before deployment or transactions, fund your wallet with Sepolia ETH from a fauc
 2. Deploy `TokenForgeFactory` from `contracts/script/DeployFactory.s.sol`
 3. Update `NEXT_PUBLIC_TOKENFORGE_FACTORY_ADDRESS`
 4. Start frontend and connect wallet
-5. Create tokens from dashboard form
+5. Create tokens from dashboard form using the factory-owner wallet
 6. Use per-token card actions to mint, transfer, and burn
 7. Confirm active network shows Sepolia before signing
 

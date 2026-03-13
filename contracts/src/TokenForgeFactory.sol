@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {TokenForgeERC20} from "src/TokenForgeERC20.sol";
 
-contract TokenForgeFactory {
+contract TokenForgeFactory is Ownable {
     error TokenForgeFactoryInvalidOwner();
     error TokenForgeFactoryInvalidRecipient();
     error TokenForgeFactoryInvalidName();
@@ -26,6 +27,8 @@ contract TokenForgeFactory {
 
     mapping(address owner => address[] tokens) private sTokensByOwner;
 
+    constructor() Ownable(msg.sender) {}
+
     function createToken(
         string calldata name,
         string calldata symbol,
@@ -33,7 +36,7 @@ contract TokenForgeFactory {
         uint256 initialMint,
         address owner,
         address initialMintRecipient
-    ) external returns (address tokenAddress) {
+    ) external onlyOwner returns (address tokenAddress) {
         if (owner == address(0)) {
             revert TokenForgeFactoryInvalidOwner();
         }

@@ -9,16 +9,20 @@ import {TokenForgeFactory} from "src/TokenForgeFactory.sol";
 
 contract TokenForgeFactoryTest is Test {
     TokenForgeFactory internal factory;
+    address internal factoryOwner;
 
     address internal ownerA = makeAddr("ownerA");
     address internal ownerB = makeAddr("ownerB");
     address internal recipient = makeAddr("recipient");
+    address internal unauthorizedCaller = makeAddr("unauthorizedCaller");
 
     function setUp() external {
         factory = new TokenForgeFactory();
+        factoryOwner = factory.owner();
     }
 
     function testCreateTokenAssignsOwnershipAndTracksOwner() external {
+        vm.prank(factoryOwner);
         address tokenAddress = factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
 
         TokenForgeERC20 token = TokenForgeERC20(tokenAddress);
@@ -32,6 +36,7 @@ contract TokenForgeFactoryTest is Test {
 
     function testCreateTokenWithInitialMint() external {
         uint256 initialMint = 10_000 ether;
+        vm.prank(factoryOwner);
         address tokenAddress = factory.createToken(
             "Beta",
             "BET",
@@ -48,17 +53,26 @@ contract TokenForgeFactoryTest is Test {
         assertEq(token.owner(), ownerA);
     }
 
+    function testCreateTokenRevertsForUnauthorizedCaller() external {
+        vm.prank(unauthorizedCaller);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, unauthorizedCaller));
+        factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
+    }
+
     function testCreateTokenRevertsForZeroOwner() external {
+        vm.prank(factoryOwner);
         vm.expectRevert(TokenForgeFactory.TokenForgeFactoryInvalidOwner.selector);
         factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, address(0), address(0));
     }
 
     function testCreateTokenRevertsForZeroCap() external {
+        vm.prank(factoryOwner);
         vm.expectRevert(TokenForgeFactory.TokenForgeFactoryInvalidCap.selector);
         factory.createToken("Alpha", "ALP", 0, 0, ownerA, address(0));
     }
 
     function testCreateTokenRevertsForCapBelowMinimum() external {
+        vm.prank(factoryOwner);
         vm.expectRevert(
             abi.encodeWithSelector(TokenForgeFactory.TokenForgeFactoryCapBelowMinimum.selector, 1, 1 ether)
         );
@@ -66,6 +80,7 @@ contract TokenForgeFactoryTest is Test {
     }
 
     function testCreateTokenRevertsForInitialMintExceedingCap() external {
+        vm.prank(factoryOwner);
         vm.expectRevert(
             abi.encodeWithSelector(
                 TokenForgeFactory.TokenForgeFactoryInitialMintExceedsCap.selector,
@@ -77,24 +92,29 @@ contract TokenForgeFactoryTest is Test {
     }
 
     function testCreateTokenRevertsForZeroInitialMintRecipient() external {
+        vm.prank(factoryOwner);
         vm.expectRevert(TokenForgeFactory.TokenForgeFactoryInvalidRecipient.selector);
         factory.createToken("Alpha", "ALP", 1_000_000 ether, 1 ether, ownerA, address(0));
     }
 
     function testCreateTokenRevertsForEmptyName() external {
+        vm.prank(factoryOwner);
         vm.expectRevert(TokenForgeFactory.TokenForgeFactoryInvalidName.selector);
         factory.createToken("", "ALP", 1_000_000 ether, 0, ownerA, address(0));
     }
 
     function testCreateTokenRevertsForEmptySymbol() external {
+        vm.prank(factoryOwner);
         vm.expectRevert(TokenForgeFactory.TokenForgeFactoryInvalidSymbol.selector);
         factory.createToken("Alpha", "", 1_000_000 ether, 0, ownerA, address(0));
     }
 
     function testGetTokensByOwnerTracksMultipleTokens() external {
+        vm.startPrank(factoryOwner);
         address tokenOne = factory.createToken("One", "ONE", 500_000 ether, 0, ownerA, address(0));
         address tokenTwo = factory.createToken("Two", "TWO", 750_000 ether, 0, ownerA, address(0));
         factory.createToken("Three", "THR", 900_000 ether, 0, ownerB, address(0));
+        vm.stopPrank();
 
         address[] memory ownerATokens = factory.getTokensByOwner(ownerA);
 
@@ -106,6 +126,7 @@ contract TokenForgeFactoryTest is Test {
     }
 
     function testTokenByOwnerAtRevertsOnOutOfBounds() external {
+        vm.prank(factoryOwner);
         factory.createToken("One", "ONE", 500_000 ether, 0, ownerA, address(0));
 
         vm.expectRevert(
@@ -115,6 +136,7 @@ contract TokenForgeFactoryTest is Test {
     }
 
     function testFactoryCannotMintAfterOwnershipTransfer() external {
+        vm.prank(factoryOwner);
         address tokenAddress = factory.createToken("Gamma", "GAM", 1_000_000 ether, 0, ownerA, address(0));
         TokenForgeERC20 token = TokenForgeERC20(tokenAddress);
 
@@ -124,6 +146,7 @@ contract TokenForgeFactoryTest is Test {
     }
 
     function testOwnerCannotMintAboveCapAfterFactoryCreation() external {
+        vm.prank(factoryOwner);
         address tokenAddress = factory.createToken("Delta", "DLT", 100 ether, 0, ownerA, address(0));
         TokenForgeERC20 token = TokenForgeERC20(tokenAddress);
 
