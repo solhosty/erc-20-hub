@@ -114,6 +114,56 @@ contract TokenForgeFactoryTest is Test {
         factory.tokenByOwnerAt(ownerA, 1);
     }
 
+    function testCreateTokenRevertsForUnauthorizedCaller() external {
+        address unauthorized = makeAddr("unauthorized");
+
+        vm.prank(unauthorized);
+        vm.expectRevert(
+            abi.encodeWithSelector(TokenForgeFactory.TokenForgeFactoryUnauthorizedCreator.selector, unauthorized)
+        );
+        factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
+    }
+
+    function testApprovedCreatorCanCreateToken() external {
+        address creator = makeAddr("creator");
+        factory.addCreator(creator);
+
+        vm.prank(creator);
+        address tokenAddress = factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
+
+        TokenForgeERC20 token = TokenForgeERC20(tokenAddress);
+        assertEq(token.owner(), ownerA);
+    }
+
+    function testRemovedCreatorCannotCreateToken() external {
+        address creator = makeAddr("creator");
+        factory.addCreator(creator);
+        factory.removeCreator(creator);
+
+        vm.prank(creator);
+        vm.expectRevert(
+            abi.encodeWithSelector(TokenForgeFactory.TokenForgeFactoryUnauthorizedCreator.selector, creator)
+        );
+        factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
+    }
+
+    function testOnlyOwnerCanAddCreator() external {
+        address creator = makeAddr("creator");
+
+        vm.prank(ownerA);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, ownerA));
+        factory.addCreator(creator);
+    }
+
+    function testOnlyOwnerCanRemoveCreator() external {
+        address creator = makeAddr("creator");
+        factory.addCreator(creator);
+
+        vm.prank(ownerA);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, ownerA));
+        factory.removeCreator(creator);
+    }
+
     function testFactoryCannotMintAfterOwnershipTransfer() external {
         address tokenAddress = factory.createToken("Gamma", "GAM", 1_000_000 ether, 0, ownerA, address(0));
         TokenForgeERC20 token = TokenForgeERC20(tokenAddress);

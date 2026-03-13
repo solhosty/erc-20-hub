@@ -2,8 +2,9 @@
 pragma solidity 0.8.24;
 
 import {TokenForgeERC20} from "src/TokenForgeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TokenForgeFactory {
+contract TokenForgeFactory is Ownable {
     error TokenForgeFactoryInvalidOwner();
     error TokenForgeFactoryInvalidRecipient();
     error TokenForgeFactoryInvalidName();
@@ -12,6 +13,7 @@ contract TokenForgeFactory {
     error TokenForgeFactoryInitialMintExceedsCap(uint256 initialMint, uint256 cap);
     error TokenForgeFactoryOwnerIndexOutOfBounds(uint256 index, uint256 length);
     error TokenForgeFactoryCapBelowMinimum(uint256 cap, uint256 minimumCap);
+    error TokenForgeFactoryUnauthorizedCreator(address caller);
 
     uint256 public constant MIN_TOKEN_CAP = 1 ether;
 
@@ -24,7 +26,30 @@ contract TokenForgeFactory {
         uint256 initialMint
     );
 
+    mapping(address creator => bool approved) public approvedCreators;
     mapping(address owner => address[] tokens) private sTokensByOwner;
+
+    event CreatorApproved(address indexed creator);
+    event CreatorRevoked(address indexed creator);
+
+    constructor() Ownable(msg.sender) {}
+
+    modifier onlyAuthorized() {
+        if (msg.sender != owner() && !approvedCreators[msg.sender]) {
+            revert TokenForgeFactoryUnauthorizedCreator(msg.sender);
+        }
+        _;
+    }
+
+    function addCreator(address creator) external onlyOwner {
+        approvedCreators[creator] = true;
+        emit CreatorApproved(creator);
+    }
+
+    function removeCreator(address creator) external onlyOwner {
+        approvedCreators[creator] = false;
+        emit CreatorRevoked(creator);
+    }
 
     function createToken(
         string calldata name,
@@ -33,7 +58,7 @@ contract TokenForgeFactory {
         uint256 initialMint,
         address owner,
         address initialMintRecipient
-    ) external returns (address tokenAddress) {
+    ) external onlyAuthorized returns (address tokenAddress) {
         if (owner == address(0)) {
             revert TokenForgeFactoryInvalidOwner();
         }
