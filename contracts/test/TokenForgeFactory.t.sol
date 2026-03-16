@@ -134,4 +134,11 @@ contract TokenForgeFactoryTest is Test {
         vm.expectRevert(abi.encodeWithSelector(ERC20Capped.ERC20ExceededCap.selector, 101 ether, 100 ether));
         token.mint(recipient, 1 ether);
     }
+
+    function testCreateTokenRevertsForDuplicateParameters() external {
+        factory.createToken("Alpha", "ALP", 1_000_000 ether, 5_000 ether, ownerA, recipient);
+
+        vm.expectRevert(TokenForgeFactory.TokenForgeFactoryDuplicateParameters.selector);
+        factory.createToken("Alpha", "ALP", 1_000_000 ether, 5_000 ether, ownerA, recipient);
+    }
 }

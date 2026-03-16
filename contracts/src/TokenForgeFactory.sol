@@ -12,6 +12,7 @@ contract TokenForgeFactory {
     error TokenForgeFactoryInitialMintExceedsCap(uint256 initialMint, uint256 cap);
     error TokenForgeFactoryOwnerIndexOutOfBounds(uint256 index, uint256 length);
     error TokenForgeFactoryCapBelowMinimum(uint256 cap, uint256 minimumCap);
+    error TokenForgeFactoryDuplicateParameters();
 
     uint256 public constant MIN_TOKEN_CAP = 1 ether;
 
@@ -25,6 +26,7 @@ contract TokenForgeFactory {
     );
 
     mapping(address owner => address[] tokens) private sTokensByOwner;
+    mapping(bytes32 parameterHash => bool exists) private sParameterHashExists;
 
     function createToken(
         string calldata name,
@@ -55,6 +57,12 @@ contract TokenForgeFactory {
         if (initialMint > 0 && initialMintRecipient == address(0)) {
             revert TokenForgeFactoryInvalidRecipient();
         }
+
+        bytes32 parameterHash = keccak256(abi.encode(name, symbol, cap, initialMint, owner, initialMintRecipient));
+        if (sParameterHashExists[parameterHash]) {
+            revert TokenForgeFactoryDuplicateParameters();
+        }
+        sParameterHashExists[parameterHash] = true;
 
         TokenForgeERC20 token = new TokenForgeERC20(name, symbol, cap, address(this));
 
