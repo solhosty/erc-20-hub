@@ -91,6 +91,25 @@ contract TokenForgeFactoryTest is Test {
         factory.createToken("Alpha", "", 1_000_000 ether, 0, ownerA, address(0));
     }
 
+    function testCreateTokenRevertsOnDuplicateParameters() external {
+        factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
+
+        bytes32 tokenHash = keccak256(abi.encode("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0)));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(TokenForgeFactory.TokenForgeFactoryDuplicateToken.selector, tokenHash)
+        );
+        factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
+    }
+
+    function testCreateTokenAllowsDifferentParameters() external {
+        factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
+
+        address secondToken = factory.createToken("Alpha", "ALP", 1_000_000 ether, 1 ether, ownerA, recipient);
+
+        assertTrue(secondToken != address(0));
+    }
+
     function testGetTokensByOwnerTracksMultipleTokens() external {
         address tokenOne = factory.createToken("One", "ONE", 500_000 ether, 0, ownerA, address(0));
         address tokenTwo = factory.createToken("Two", "TWO", 750_000 ether, 0, ownerA, address(0));

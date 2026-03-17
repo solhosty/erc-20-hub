@@ -25,6 +25,13 @@ export const tokenForgeFactoryAbi = [
     type: "function"
   },
   {
+    inputs: [{ internalType: "bytes32", name: "tokenHash", type: "bytes32" }],
+    name: "sDeployedTokenHashes",
+    outputs: [{ internalType: "bool", name: "deployed", type: "bool" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
     inputs: [{ internalType: "address", name: "owner", type: "address" }],
     name: "tokensByOwnerCount",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
@@ -56,7 +63,8 @@ export const tokenForgeFactoryAbi = [
       { indexed: false, internalType: "string", name: "name", type: "string" },
       { indexed: false, internalType: "string", name: "symbol", type: "string" },
       { indexed: false, internalType: "uint256", name: "cap", type: "uint256" },
-      { indexed: false, internalType: "uint256", name: "initialMint", type: "uint256" }
+      { indexed: false, internalType: "uint256", name: "initialMint", type: "uint256" },
+      { indexed: false, internalType: "bytes32", name: "tokenHash", type: "bytes32" }
     ],
     name: "TokenCreated",
     type: "event"
@@ -67,6 +75,11 @@ export const tokenForgeFactoryAbi = [
       { internalType: "uint256", name: "minimumCap", type: "uint256" }
     ],
     name: "TokenForgeFactoryCapBelowMinimum",
+    type: "error"
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "tokenHash", type: "bytes32" }],
+    name: "TokenForgeFactoryDuplicateToken",
     type: "error"
   },
   {
