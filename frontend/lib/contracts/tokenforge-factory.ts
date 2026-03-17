@@ -56,10 +56,16 @@ export const tokenForgeFactoryAbi = [
       { indexed: false, internalType: "string", name: "name", type: "string" },
       { indexed: false, internalType: "string", name: "symbol", type: "string" },
       { indexed: false, internalType: "uint256", name: "cap", type: "uint256" },
-      { indexed: false, internalType: "uint256", name: "initialMint", type: "uint256" }
+      { indexed: false, internalType: "uint256", name: "initialMint", type: "uint256" },
+      { indexed: false, internalType: "bytes32", name: "tokenHash", type: "bytes32" }
     ],
     name: "TokenCreated",
     type: "event"
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "tokenHash", type: "bytes32" }],
+    name: "TokenForgeFactoryDuplicateToken",
+    type: "error"
   },
   {
     inputs: [

@@ -12,6 +12,7 @@ contract TokenForgeFactory {
     error TokenForgeFactoryInitialMintExceedsCap(uint256 initialMint, uint256 cap);
     error TokenForgeFactoryOwnerIndexOutOfBounds(uint256 index, uint256 length);
     error TokenForgeFactoryCapBelowMinimum(uint256 cap, uint256 minimumCap);
+    error TokenForgeFactoryDuplicateToken(bytes32 tokenHash);
 
     uint256 public constant MIN_TOKEN_CAP = 1 ether;
 
@@ -21,10 +22,12 @@ contract TokenForgeFactory {
         string name,
         string symbol,
         uint256 cap,
-        uint256 initialMint
+        uint256 initialMint,
+        bytes32 tokenHash
     );
 
     mapping(address owner => address[] tokens) private sTokensByOwner;
+    mapping(bytes32 tokenHash => bool deployed) public sDeployedTokenHashes;
 
     function createToken(
         string calldata name,
@@ -56,6 +59,12 @@ contract TokenForgeFactory {
             revert TokenForgeFactoryInvalidRecipient();
         }
 
+        bytes32 tokenHash = keccak256(abi.encode(name, symbol, cap, owner, initialMint, initialMintRecipient));
+        if (sDeployedTokenHashes[tokenHash]) {
+            revert TokenForgeFactoryDuplicateToken(tokenHash);
+        }
+        sDeployedTokenHashes[tokenHash] = true;
+
         TokenForgeERC20 token = new TokenForgeERC20(name, symbol, cap, address(this));
 
         if (initialMint > 0) {
@@ -67,7 +76,7 @@ contract TokenForgeFactory {
         tokenAddress = address(token);
         sTokensByOwner[owner].push(tokenAddress);
 
-        emit TokenCreated(owner, tokenAddress, name, symbol, cap, initialMint);
+        emit TokenCreated(owner, tokenAddress, name, symbol, cap, initialMint, tokenHash);
     }
 
     function getTokensByOwner(address owner) external view returns (address[] memory) {
