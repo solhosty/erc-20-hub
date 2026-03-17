@@ -16,14 +16,7 @@ contract TokenForgeFactory {
 
     uint256 public constant MIN_TOKEN_CAP = 1 ether;
 
-    event TokenCreated(
-        address indexed owner,
-        address indexed token,
-        string name,
-        string symbol,
-        uint256 cap,
-        uint256 initialMint
-    );
+    event TokenCreated(address indexed owner, address indexed token, string name, string symbol, uint256 cap, uint256 initialMint);
 
     mapping(address owner => address[] tokens) private sTokensByOwner;
     mapping(bytes32 parameterHash => bool exists) private sParameterHashExists;
@@ -58,7 +51,9 @@ contract TokenForgeFactory {
             revert TokenForgeFactoryInvalidRecipient();
         }
 
-        bytes32 parameterHash = keccak256(abi.encode(name, symbol, cap, initialMint, owner, initialMintRecipient));
+        bytes32 parameterHash = keccak256(
+            abi.encode(name, symbol, cap, initialMint, owner, initialMintRecipient)
+        );
         if (sParameterHashExists[parameterHash]) {
             revert TokenForgeFactoryDuplicateParameters();
         }

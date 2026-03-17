@@ -22,7 +22,11 @@ contract TokenForgeERC20 is ERC20, ERC20Burnable, ERC20Capped, ERC20Pausable, Ow
         string memory symbol_,
         uint256 cap_,
         address initialOwner_
-    ) ERC20(name_, symbol_) ERC20Capped(cap_) Ownable(initialOwner_) {
+    )
+        ERC20(name_, symbol_)
+        ERC20Capped(cap_)
+        Ownable(initialOwner_)
+    {
         if (cap_ < MIN_CAP) {
             revert TokenForgeInvalidCap(cap_);
         }

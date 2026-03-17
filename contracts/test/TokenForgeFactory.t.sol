@@ -19,7 +19,14 @@ contract TokenForgeFactoryTest is Test {
     }
 
     function testCreateTokenAssignsOwnershipAndTracksOwner() external {
-        address tokenAddress = factory.createToken("Alpha", "ALP", 1_000_000 ether, 0, ownerA, address(0));
+        address tokenAddress = factory.createToken(
+            "Alpha",
+            "ALP",
+            1_000_000 ether,
+            0,
+            ownerA,
+            address(0)
+        );
 
         TokenForgeERC20 token = TokenForgeERC20(tokenAddress);
 
@@ -119,7 +126,9 @@ contract TokenForgeFactoryTest is Test {
         TokenForgeERC20 token = TokenForgeERC20(tokenAddress);
 
         vm.prank(address(factory));
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(factory)));
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(factory))
+        );
         token.mint(recipient, 1 ether);
     }
 
@@ -131,7 +140,9 @@ contract TokenForgeFactoryTest is Test {
         token.mint(recipient, 100 ether);
 
         vm.prank(ownerA);
-        vm.expectRevert(abi.encodeWithSelector(ERC20Capped.ERC20ExceededCap.selector, 101 ether, 100 ether));
+        vm.expectRevert(
+            abi.encodeWithSelector(ERC20Capped.ERC20ExceededCap.selector, 101 ether, 100 ether)
+        );
         token.mint(recipient, 1 ether);
     }
 
